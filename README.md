@@ -69,6 +69,9 @@ grep -n "Debug: Log index and input info" vendor/wikimedia/less.php/lib/Less/Exc
 ```
 
 2. Looking for enhanced error messages in logs during Less compilation
+```bash
+bin/magento setup:static-content:deploy
+```
 
 ## Technical Details
 
