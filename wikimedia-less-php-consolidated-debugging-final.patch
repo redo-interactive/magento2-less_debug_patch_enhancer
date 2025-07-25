@@ -1,0 +1,72 @@
+--- a/lib/Less/Exception/Parser.php
++++ b/lib/Less/Exception/Parser.php
+@@ -52,13 +52,19 @@ class Less_Exception_Parser extends Exception {
+ 	 */
+ 	public function genMessage() {
+ 		if ( $this->currentFile && $this->currentFile['filename'] ) {
+-			$this->finalMessage .= ' in ' . basename( $this->currentFile['filename'] );
++			$this->finalMessage .= ' in ' . $this->currentFile['filename'];
+ 		}
+ 
+ 		if ( $this->index !== null ) {
+ 			$this->getInput();
+ 			if ( $this->input ) {
++				// Debug: Log index and input info
++				$inputLength = strlen($this->input);
++				$filename = $this->currentFile ? $this->currentFile['filename'] : 'unknown';
++				error_log("LESS Debug - genMessage: index={$this->index}, input_length={$inputLength}, file={$filename}");
++				
+ 				$line = self::getLineNumber();
++				error_log("LESS Debug - calculated line number: {$line}");
+ 				$this->finalMessage .= ' on line ' . $line . ', column ' . self::getColumn();
+ 
+ 				$lines = explode( "\n", $this->input );
+--- a/lib/Less/Functions.php
++++ b/lib/Less/Functions.php
+@@ -10,10 +10,13 @@ class Less_Functions {
+ 	public $env;
+ 	/** @var array|null */
+ 	public $currentFileInfo;
++	/** @var int|null */
++	public $index;
+ 
+-	public function __construct( $env, ?array $currentFileInfo = null ) {
++	public function __construct( $env, ?array $currentFileInfo = null, $index = null ) {
+ 		$this->env = $env;
+ 		$this->currentFileInfo = $currentFileInfo;
++		$this->index = $index;
+ 	}
+ 
+ 	private static function _clamp( $val, $max = 1 ) {
+@@ -744,7 +747,19 @@ class Less_Functions {
+ 		} elseif ( is_numeric( $args[0] ) ) {
+ 			return $fn( ...$args );
+ 		} else {
+-			throw new Less_Exception_Compiler( "math functions take numbers as parameters" );
++			$argType = gettype( $args[0] );
++			$argValue = '';
++			if ( is_object( $args[0] ) ) {
++				$argType = get_class( $args[0] );
++				if ( method_exists( $args[0], '__toString' ) ) {
++					$argValue = ' (value: "' . $args[0]->__toString() . '")';
++				}
++			}
++			$errorMsg = "math function `{$fn}` expects numeric parameters, got {$argType}{$argValue}";
++			// Debug: Add index information to error message
++			$debugMsg = $errorMsg . " [DEBUG: index=" . ($this->index ?? 'null') . "]";
++			error_log("LESS Function Error Debug: " . $debugMsg);
++			throw new Less_Exception_Compiler( $debugMsg, null, $this->index, $this->currentFileInfo );
+ 		}
+ 	}
+ 
+--- a/lib/Less/Tree/Call.php
++++ b/lib/Less/Tree/Call.php
+@@ -127,7 +127,7 @@ class Less_Tree_Call extends Less_Tree {
+ 			$result = Less_Tree_DefaultFunc::compile();
+ 		} else {
+ 			$func = null;
+-			$functions = new Less_Functions( $env, $this->currentFileInfo );
++			$functions = new Less_Functions( $env, $this->currentFileInfo, $this->index );
+ 			$funcBuiltin = [ $functions, $nameLC ];
+ 			// Avoid method_exists() as that considers private utility functions too
+ 			if ( is_callable( $funcBuiltin ) ) {
