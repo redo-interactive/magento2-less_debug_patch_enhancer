@@ -1,4 +1,4 @@
-# Magento 2 Wikimedia Less PHP Enhanced Debugging Patch
+# Magento 2.4.8 Wikimedia Less 5.4 PHP Enhanced Debugging Patch
 
 Enhanced error reporting and debugging capabilities for the Wikimedia Less PHP library used in Magento.
 
