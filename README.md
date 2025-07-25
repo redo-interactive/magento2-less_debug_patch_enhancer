@@ -4,7 +4,7 @@ Enhanced error reporting and debugging capabilities for the Wikimedia Less PHP l
 
 ## Compatible with
 
-- Magento 2.4.6+ (tested on 2.4.8)
+- Magento 2.4.8
 - Wikimedia Less PHP v5.4
 - PHP 8.3, 8.4
 
